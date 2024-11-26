@@ -33,11 +33,21 @@ func main() {
 				complete: false,
 			})
 		case "delete":
-			break
+			for i, task := range taskList {
+				if task.name == strings.Join(split[1:], " ") {
+					taskList = append(taskList[:i], taskList[i+1:]...)
+				}
+			}
 		case "list":
 			fmt.Println("Task List:")
 			for _, t := range taskList {
 				fmt.Printf("ID: %d, Name: %s, Completed: %t\n", t.id, t.name, t.complete)
+			}
+		case "complete":
+			for i, task := range taskList {
+				if task.name == strings.Join(split[1:], " ") {
+					taskList[i].complete = true
+				}
 			}
 		}
 	}
