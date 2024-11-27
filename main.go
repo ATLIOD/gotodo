@@ -5,12 +5,16 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 type task struct {
 	id       int
 	name     string
 	complete bool
+	category string
+	urgency  string
+	dueDate  time.Time
 }
 
 func main() {
