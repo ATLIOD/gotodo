@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 	"strconv"
@@ -11,13 +12,13 @@ import (
 
 // struct for tasks
 type task struct {
-	id           int
-	name         string
-	complete     bool
-	category     string
-	urgency      string
-	dueDate      time.Time
-	creationDate time.Time
+	ID           int       `json:"id"`
+	Name         string    `json:"name"`
+	Complete     bool      `json:"complete"`
+	Category     string    `json:"category"`
+	Urgency      string    `json:"urgency"`
+	DueDate      time.Time `json:"dueDate"`
+	CreationDate time.Time `json:"creationDate"`
 }
 
 // function will create task based off user input string
@@ -55,20 +56,20 @@ func create(tasks []task, input string, currentID int) []task {
 	}
 	//assign values. any values not found will be assigned default
 	tasks = append(tasks, task{
-		id:           currentID,
-		name:         defaultname,
-		complete:     defaultcomplete,
-		category:     defaultcategory,
-		urgency:      defaulturgency,
-		dueDate:      defaultdueDate,
-		creationDate: time.Now(),
+		ID:           currentID,
+		Name:         defaultname,
+		Complete:     defaultcomplete,
+		Category:     defaultcategory,
+		Urgency:      defaulturgency,
+		DueDate:      defaultdueDate,
+		CreationDate: time.Now(),
 	})
 	return tasks
 }
 
 func delete(tasks []task, searchID int) []task {
 	for i, task := range tasks {
-		if task.id == searchID {
+		if task.ID == searchID {
 			tasks = append(tasks[:i], tasks[i+1:]...)
 			return tasks
 		}
@@ -79,14 +80,29 @@ func delete(tasks []task, searchID int) []task {
 func list(tasks []task) {
 	fmt.Println("Task List:")
 	for _, t := range tasks {
-		fmt.Printf("ID: %d, Name: %s, Completed: %t, Category: %s, Urgency: %s, Due date: %v\n", t.id, t.name, t.complete, t.category, t.urgency, t.dueDate)
+		fmt.Printf("ID: %d, Name: %s, Completed: %t, Category: %s, Urgency: %s, Due date: %v\n", t.ID, t.Name, t.Complete, t.Category, t.Urgency, t.DueDate)
 	}
+}
+
+func SaveTasks(tasks []task) error {
+	file, err := os.Create("saved_tasks.json")
+	if err != nil {
+		return fmt.Errorf("error creating file: %v", err)
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	if err := encoder.Encode(tasks); err != nil {
+		return fmt.Errorf("error encoding tasks: %v", err)
+	}
+
+	return nil
 }
 
 func complete(tasks []task, searchID int) []task {
 	for i, task := range tasks {
-		if task.id == searchID {
-			tasks[i].complete = true
+		if task.ID == searchID {
+			tasks[i].Complete = true
 			return tasks
 		}
 	}
@@ -95,19 +111,23 @@ func complete(tasks []task, searchID int) []task {
 
 func main() {
 	//list commands available
-	fmt.Println("Commands: list, create, delete, complete, quit")
-	//declare for user input
+	fmt.Println("Commands: list, create, delete, complete, quit, save")
+
 	//split for todo tasks
 	tasks := make([]task, 0)
+
 	//scanner for terminal input
 	scanner := bufio.NewScanner(os.Stdin)
+
 	//loop for user input
 	for scanner.Scan() {
 		line := scanner.Text()
 		split := strings.Split(line, " ")
+
 		switch split[0] {
 		case "create":
 			tasks = create(tasks, line, len(tasks)+1)
+
 		case "delete":
 			//convert number part of input to int so can be passed as id
 			searchID, err := strconv.Atoi(split[1])
@@ -115,8 +135,10 @@ func main() {
 				panic(err)
 			}
 			tasks = delete(tasks, searchID)
+
 		case "list":
 			list(tasks)
+
 		case "complete":
 			//convert number part of input to int so can be passed as id
 			searchID, err := strconv.Atoi(split[1])
@@ -124,6 +146,11 @@ func main() {
 				panic(err)
 			}
 			tasks = complete(tasks, searchID)
+		case "quit":
+			SaveTasks(tasks)
+			os.Exit(0)
+		case "save":
+			SaveTasks(tasks)
 		}
 	}
 }
