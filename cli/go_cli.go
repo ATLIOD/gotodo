@@ -1,4 +1,4 @@
-package main
+package go_cli
 
 import (
 	"bufio"
@@ -109,12 +109,41 @@ func complete(tasks []task, searchID int) []task {
 	return tasks
 }
 
+func LoadTasks() ([]task, error) {
+	// Check if file exists
+	if _, err := os.Stat("saved_tasks.json"); os.IsNotExist(err) {
+		return make([]task, 0), nil // Return empty slice if file doesn't exist
+	}
+
+	// Open the file
+	file, err := os.Open("saved_tasks.json")
+	if err != nil {
+		return nil, fmt.Errorf("error opening file: %v", err)
+	}
+	defer file.Close()
+
+	// Create a slice to store the tasks
+	var tasks []task
+
+	// Create a decoder and decode into tasks slice
+	decoder := json.NewDecoder(file)
+	if err := decoder.Decode(&tasks); err != nil {
+		return nil, fmt.Errorf("error decoding tasks: %v", err)
+	}
+
+	return tasks, nil
+}
+
 func main() {
 	//list commands available
 	fmt.Println("Commands: list, create, delete, complete, quit, save")
 
 	//split for todo tasks
-	tasks := make([]task, 0)
+	tasks, err := LoadTasks()
+	if err != nil {
+		fmt.Printf("Error loading tasks: %v\n", err)
+		tasks = make([]task, 0) // Create empty slice if loading fails
+	}
 
 	//scanner for terminal input
 	scanner := bufio.NewScanner(os.Stdin)
